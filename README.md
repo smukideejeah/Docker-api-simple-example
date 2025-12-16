@@ -11,27 +11,49 @@ Esta es una API REST que proporciona operaciones CRUD (Crear, Leer, Actualizar, 
 - **Base de datos** (MySQL 9.5) en el puerto 3306
 
 ### Características destacadas:
-- ✅ **Estructura modular y limpia** - Fácil de entender y modificar
-- ✅ **Sin middlewares predefinidos** - Agrega los tuyos propios según necesites
+- ✅ **Arquitectura en capas** - Separación clara: Routes → Middlewares → Controllers → Services → Models
+- ✅ **Capa de servicios** - Lógica de negocio separada de los controladores
+- ✅ **Middlewares de ejemplo** - Incluye ejemplos funcionales para aprender
 - ✅ **Totalmente containerizado** - Funciona en cualquier máquina con Docker
 - ✅ **TypeScript** - Código tipado y seguro
 - ✅ **ORM Sequelize** - Interacción con MySQL de forma elegante
+- ✅ **Manejo de errores robusto** - Status codes y mensajes personalizados
 
 ## 🏗️ Arquitectura
 
+El proyecto sigue una **arquitectura en capas** limpia y escalable:
+
 ```
 API REST (Express)
-├── Routes/
+├── Routes/              # Definición de endpoints
 │   └── V1/
-│       └── /products (CRUD de productos)
-├── Controllers/
-│   └── Products.controller (Lógica de negocio)
-├── Models/
-│   └── Products (Modelo Sequelize)
-└── Config/
-    ├── Database (Conexión MySQL)
-    └── Env (Variables de entorno)
+│       └── /products   # Rutas CRUD de productos
+├── Middlewares/         # Middlewares personalizados (ejemplos incluidos)
+│   ├── exampleSection  # Se aplica a toda una sección de rutas
+│   └── exampleEndpoint # Se aplica a endpoints específicos
+├── Controllers/         # Manejo de Request/Response
+│   └── Products        # Validación y orquestación
+├── Services/            # Lógica de negocio
+│   └── Products/       # Operaciones CRUD encapsuladas
+│       ├── create
+│       ├── getAll
+│       ├── getById
+│       ├── update
+│       └── delete
+├── Models/              # Definición de esquemas
+│   └── Products        # Modelo Sequelize
+└── Config/              # Configuración
+    ├── Database        # Conexión MySQL
+    └── Env             # Variables de entorno
 ```
+
+### Flujo de una petición:
+1. **Route** recibe la petición
+2. **Middleware** procesa/valida (opcional)
+3. **Controller** valida entrada y coordina
+4. **Service** ejecuta lógica de negocio
+5. **Model** interactúa con la base de datos
+6. **Controller** envía respuesta al cliente
 
 ## 📦 Requisitos
 
@@ -100,47 +122,76 @@ API REST (Express)
    npm run watch
    ```
 
-## 🧩 Extensibilidad - Agrega tus Propios Middlewares
+## 🧩 Middlewares - Ejemplos Incluidos
 
-Este API **no incluye middlewares predefinidos** para que tengas total libertad de agregar los tuyos propios según tus necesidades. Aquí te muestran cómo hacerlo:
+El proyecto incluye **dos middlewares de ejemplo** para que veas cómo funcionan y puedas crear los tuyos:
 
-### Ejemplo: Agregar un middleware de autenticación
+### 1. Middleware de Sección (`exampleSection.middleware.ts`)
+Se aplica a **todas las rutas** de una sección específica (ej: `/v1/products`):
 
-1. Crea un archivo `src/middlewares/auth.ts`:
 ```typescript
+import { NextFunction, Request, Response } from "express";
+
+export default async function(req: Request, res: Response, next: NextFunction){
+    // Ejemplo: log del método y URL
+    console.log("Example section middleware executed in: ", req.method, req.url);
+    next();
+}
+```
+
+**Uso en** [src/Routes/V1/index.ts](src/Routes/V1/index.ts):
+```typescript
+V1Router.use('/products', exampleSectionMiddleware, ProductsRoute);
+```
+
+### 2. Middleware de Endpoint (`exampleEndpoint.middleware.ts`)
+Se aplica a **un endpoint específico** (ej: `GET /v1/products`):
+
+```typescript
+import { NextFunction, Request, Response } from "express";
+
+export default async function(req: Request, res: Response, next: NextFunction){
+    // Ejemplo: log del acceso con timestamp
+    console.log(`Example endpoint accessed at ${new Date().toISOString()}`);
+    next();
+}
+```
+
+**Uso en** [src/Routes/V1/Products.route.ts](src/Routes/V1/Products.route.ts):
+```typescript
+ProductsRoute.get('/', exampleEndpointMiddleware, getAllProducts);
+```
+
+### Crea tus propios Middlewares
+
+Puedes agregar middlewares para:
+- 🔐 **Autenticación**: Validar JWT, API keys, sesiones
+- ✅ **Validación**: Verificar estructura de datos con Zod, Joi, etc.
+- 📝 **Logging**: Registrar requests, errores, métricas
+- 🚦 **Rate Limiting**: Limitar peticiones por IP/usuario
+- 🛡️ **Seguridad**: Helmet, CORS personalizado, sanitización
+
+**Ejemplo de middleware de autenticación:**
+```typescript
+// src/middlewares/auth.middleware.ts
 import { Request, Response, NextFunction } from 'express';
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction) {
+export default async function(req: Request, res: Response, next: NextFunction) {
   const token = req.headers.authorization;
   
   if (!token) {
     return res.status(401).json({ message: 'No token provided' });
   }
   
-  // Validar token aquí...
-  next();
+  // Validar token aquí (JWT, API Key, etc.)
+  try {
+    // const decoded = jwt.verify(token, SECRET);
+    // req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
 }
-```
-
-2. Úsalo en tus rutas (`src/Routes/V1/Products.route.ts`):
-```typescript
-import { authMiddleware } from '../../middlewares/auth.js';
-
-ProductsRoute.post('/', authMiddleware, createProduct);
-```
-
-### Middleware de logging ejemplo:
-```typescript
-export function loggingMiddleware(req: Request, res: Response, next: NextFunction) {
-  console.log(`${req.method} ${req.path}`);
-  next();
-}
-```
-
-Luego en `src/index.ts`:
-```typescript
-import { loggingMiddleware } from './middlewares/logging.js';
-app.use(loggingMiddleware);
 ```
 
 ## 🗄️ Variables de Entorno
@@ -273,27 +324,44 @@ npm run lint:fix   # Corregir automáticamente problemas de ESLint
 ```
 graph02/
 ├── src/                      # Código fuente TypeScript
-│   ├── index.ts             # Punto de entrada
-│   ├── config/
+│   ├── index.ts             # Punto de entrada de la aplicación
+│   ├── config/              # Configuración
 │   │   ├── env.ts           # Gestor de variables de entorno
 │   │   └── database.ts      # Conexión y configuración de Sequelize
-│   ├── Controllers/
-│   │   └── Products.controller.ts  # Lógica de negocio
-│   ├── Models/
-│   │   └── products.model.ts       # Definición del modelo
-│   └── Routes/
-│       ├── index.ts         # Rutas principales
-│       └── V1/
-│           ├── index.ts     # Rutas V1
-│           └── Products.route.ts   # Rutas de productos
-├── build/                    # Código compilado (generado)
+│   ├── middlewares/         # Middlewares personalizados
+│   │   ├── exampleSection.middleware.ts     # Ejemplo: middleware de sección
+│   │   └── exampleEndpoint.middleware.ts    # Ejemplo: middleware de endpoint
+│   ├── Routes/              # Definición de rutas
+│   │   ├── index.ts         # Rutas principales
+│   │   └── V1/
+│   │       ├── index.ts     # Rutas V1 (con middleware de sección)
+│   │       └── Products.route.ts   # Endpoints de productos
+│   ├── Controllers/         # Coordinación y validación
+│   │   └── Products.controller.ts  # Maneja req/res de productos
+│   ├── services/            # Lógica de negocio
+│   │   └── products/        # Servicios de productos
+│   │       ├── getAllProducts.ts   # Obtener todos los productos
+│   │       ├── getProductById.ts   # Obtener producto por ID
+│   │       ├── createProduct.ts    # Crear nuevo producto
+│   │       ├── updateProduct.ts    # Actualizar producto
+│   │       └── deleteProduct.ts    # Eliminar producto
+│   └── models/              # Modelos de datos
+│       └── products.model.ts       # Definición del modelo Product
+├── build/                    # Código compilado (generado por tsc)
 ├── Dockerfile               # Configuración del contenedor
-├── docker-compose.yml       # Definición de servicios
+├── docker-compose.yml       # Definición de servicios (app + db)
+├── .dockerignore            # Archivos ignorados en Docker build
 ├── package.json             # Dependencias del proyecto
 ├── tsconfig.json           # Configuración de TypeScript
 ├── eslint.config.ts        # Configuración de ESLint
 └── README.md               # Este archivo
 ```
+
+### Ventajas de esta estructura:
+- 🎯 **Separación de responsabilidades**: Cada capa tiene un propósito claro
+- 🧪 **Fácil de testear**: Los servicios se pueden testear independientemente
+- 🔧 **Mantenible**: Cambios en una capa no afectan a las demás
+- 📈 **Escalable**: Agregar nuevos recursos es simple y consistente
 
 ## 🔄 Flujo de Conexión a la Base de Datos
 
@@ -303,23 +371,29 @@ graph02/
 4. Las tablas se crean o actualizan automáticamente
 5. La API queda lista para recibir solicitudes
 
+> Nota: `alter: true` en `sequelize.sync()` está activado para aprendizaje y desarrollo. No lo uses en producción porque puede alterar esquemas en caliente y bloquear tablas; usa migraciones controladas en su lugar.
+
 ## 🎓 Casos de Uso - Usa Este Proyecto Como Base
 
 Este API es perfecto para:
 
 ### Aprendizaje
-- 📚 Aprender patrones de arquitectura REST
-- 📚 Entender cómo funciona Docker y Docker Compose
-- 📚 Practicar TypeScript en un contexto real
-- 📚 Trabajar con Sequelize y bases de datos MySQL
-- 📚 Implementar operaciones CRUD
+- 📚 Aprender **arquitectura en capas** y separación de responsabilidades
+- 📚 Entender cómo funciona **Docker y Docker Compose**
+- 📚 Practicar **TypeScript** en un contexto real
+- 📚 Trabajar con **Sequelize** ORM y bases de datos MySQL
+- 📚 Implementar operaciones **CRUD** completas
+- 📚 Aprender a crear y usar **middlewares** en Express
+- 📚 Ver **patrones de diseño** en acción (Service Layer, Controller)
 
 ### Como Base para Tus Proyectos
-- 🚀 Reemplaza el modelo `Products` con tu entidad (Users, Orders, etc.)
-- 🚀 Agrega los middlewares que necesites (autenticación, validación, etc.)
-- 🚀 Expande las rutas según tus requisitos
-- 🚀 Personaliza los controladores con tu lógica de negocio
-- 🚀 Mantén la estructura modular para fácil mantenimiento
+- 🚀 **Duplica la estructura** para nuevos recursos (ej: Users, Orders)
+- 🚀 **Reemplaza el modelo** `Products` con tus propias entidades
+- 🚀 **Agrega middlewares** personalizados (autenticación, validación, rate limiting)
+- 🚀 **Expande los servicios** con lógica de negocio compleja
+- 🚀 **Agrega validaciones** con Zod, Joi o class-validator
+- 🚀 **Integra testing** (Jest, Supertest) manteniendo la estructura
+- 🚀 **Mantén la arquitectura limpia** al escalar tu proyecto
 
 ## 🛑 Detención y Limpieza
 

@@ -6,10 +6,11 @@ import {
 	getProductById,
 	updateProduct,
 } from '../../Controllers/Products.controller.js';
+import exampleEndpointMiddleware from '../../middlewares/exampleEndpoint.middleware.js';
 
 const ProductsRoute = Router();
 
-ProductsRoute.get('/', getAllProducts);
+ProductsRoute.get('/', exampleEndpointMiddleware, getAllProducts);
 ProductsRoute.get('/:id', getProductById);
 ProductsRoute.post('/', createProduct);
 ProductsRoute.put('/:id', updateProduct);

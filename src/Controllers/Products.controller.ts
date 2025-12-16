@@ -1,34 +1,48 @@
 import { Request, Response } from 'express';
 import Products from '../models/products.model.js';
+import getAllProductsService from '../services/products/getAllProducts.js';
+import getProductByIdService from '../services/products/getProductById.js';
+import createProductService from '../services/products/createProduct.js';
+import updateProductService from '../services/products/updateProduct.js';
+import deleteProductService from '../services/products/deleteProduct.js';
 
 export async function getAllProducts(req: Request, res: Response) {
-	const products = await Products.findAll();
-	res.json({ message: 'Products List', products });
+	try{
+		return res.json(await getAllProductsService());
+	}catch(error){
+		return res.status(500).json({
+			message: 'Error fetching products',
+			error: error instanceof Error ? error.message : String(error),
+		});
+	}
 }
 
 export async function getProductById(req: Request, res: Response) {
-	const { id } = req.params;
-	const product = await Products.findByPk(id);
-	if (!product) return res.status(404).json({ message: 'Product Not Found' });
-	res.json({ message: 'Product Found', product });
+	try {
+		const { id } = req.params;
+		const product = await getProductByIdService(Number(id));
+		console.log("Returning product:", product);
+		return res.json(product);
+	} catch (error) {
+		const status = (error as any).status || 500;
+		return res.status(status).json({
+			message: 'Error fetching product',
+			error: error instanceof Error ? error.message : String(error),
+		});
+	}
 }
 
 export async function createProduct(req: Request, res: Response) {
 	try {
-		console.log(req.body);
 		const { name, price, stock } = req.body;
-		const newProduct = await Products.create({
-			name,
-			price,
-			stock,
-		});
-		res.status(201).json({
-			message: 'Product Created',
-			product: newProduct,
-		});
+		if(!name) throw { status: 400, message: 'Name is required' };
+		if(price == null) throw { status: 400, message: 'Price is required' };
+		if(stock == null) throw { status: 400, message: 'Stock is required' };
+		const newProduct = await createProductService({ name, price, stock });
+		res.status(201).json(newProduct);
 	} catch (error) {
-		console.log(error);
-		res.status(500).json({
+		const status = (error as any).status || 500;
+		return res.status(status).json({
 			message: 'Error creating product',
 			error: error instanceof Error ? error.message : String(error),
 		});
@@ -37,34 +51,18 @@ export async function createProduct(req: Request, res: Response) {
 
 export async function updateProduct(req: Request, res: Response) {
 	try {
-		console.log(req.params.id);
-		const { name, price, stock, isActive } = req.body;
+		const { name, price, stock } = req.body;
 		const { id } = req.params;
 
-		const product = await Products.findByPk(id);
-		if (!product)
-			return res.status(404).json({ message: 'Product Not Found' });
-
-		const productUpdated = await Products.update(
-			{
-				name,
-				price,
-				stock,
-				isActive,
-			},
-			{
-				where: { id },
-			}
-		);
-		console.log(productUpdated);
-		//last updated product
-		res.status(200).json({
+		await updateProductService(Number(id), { name, price, stock });
+		return res.status(200).json({
 			message: 'Product Updated',
-			affected: productUpdated,
+			success: true,
 		});
 	} catch (error) {
-		res.status(500).json({
-			message: 'Error creating product',
+		const status = (error as any).status || 500;
+		return res.status(status).json({
+			message: 'Error updating product',
 			error: error instanceof Error ? error.message : String(error),
 		});
 	}
@@ -74,16 +72,14 @@ export async function deleteProduct(req: Request, res: Response) {
 	try {
 		const { id } = req.params;
 
-		const product = await Products.findByPk(id);
-		if (!product)
-			return res.status(404).json({ message: 'Product Not Found' });
-
-		const deleted = await Products.destroy({
-			where: { id },
+		await deleteProductService(Number(id));
+		return res.status(200).json({ 
+			message: 'Product Deleted',
+			success: true,
 		});
-		res.status(200).json({ message: 'Product Deleted', affected: deleted });
 	} catch (error) {
-		res.status(500).json({
+		const status = (error as any).status || 500;
+		return res.status(status).json({
 			message: 'Error deleting product',
 			error: error instanceof Error ? error.message : String(error),
 		});
