@@ -72,6 +72,10 @@ API REST (Express)
    ```bash
    docker compose up -d
    ```
+   Si haces modificaciones debes reconstruir el contenedor
+   ```bash
+   docker compose up -d --build
+   ```
    
    Esto levantará:
    - MySQL en `localhost:3306`
@@ -86,6 +90,10 @@ API REST (Express)
 4. **Detener los servicios**
    ```bash
    docker compose down
+   ```
+   Detener los servicios y eliminar los volúmenes de datos
+   ```bash
+   docker compose down -v
    ```
 
 ### Localmente (sin Docker)
