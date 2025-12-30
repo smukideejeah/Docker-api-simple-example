@@ -50,9 +50,7 @@ describe('PUT /v1/products/:id', () => {
 			const expectedMessage = 'Name is required';
 
 			//Act
-			const resp = await testServer
-				.put(`/v1/products/${testProduct.id}`)
-				.send(updatedData);
+			const resp = await testServer.put(`/v1/products/${testProduct.id}`).send(updatedData);
 			const responseStatus = resp.status;
 			const responseBody = resp.body;
 
