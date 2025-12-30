@@ -17,10 +17,6 @@ export async function ConnectDB() {
 	for (let i = 0; i < 5; i++) {
 		try {
 			await sequelize.authenticate();
-			//Disable alter: true in production to avoid data loss
-			await sequelize.sync({
-				alter: true,
-			});
 			console.log('Connection has been established successfully.');
 			return;
 		} catch (error) {

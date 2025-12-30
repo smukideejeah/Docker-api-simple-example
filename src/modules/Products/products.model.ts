@@ -5,7 +5,7 @@ import {
 	InferCreationAttributes,
 	Model,
 } from 'sequelize';
-import { sequelize } from '../config/database.js';
+import { sequelize } from '../../config/database.js';
 
 class Products extends Model<
 	InferAttributes<Products>,
@@ -30,20 +30,17 @@ Products.init(
 			allowNull: false,
 		},
 		price: {
-			type: DataTypes.FLOAT,
+			type: DataTypes.DECIMAL(10, 2),
 			allowNull: false,
-			key: 'price',
 		},
 		stock: {
 			type: DataTypes.INTEGER.UNSIGNED,
 			allowNull: false,
-			key: 'stock',
 		},
 		isActive: {
 			type: DataTypes.BOOLEAN,
 			defaultValue: true,
 			allowNull: false,
-			key: 'is_active',
 		},
 	},
 	{

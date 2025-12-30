@@ -11,6 +11,7 @@ services:
       - MYSQL_DATABASE=products
       - MYSQL_USER=gql
       - MYSQL_PASSWORD=gql2025
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -u gql -p$$MYSQL_PASSWORD || exit 1"]
       interval: 10s
@@ -27,6 +28,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_USER=gql
+      - DB_PASSWORD=gql2025
+      - DB_NAME=products
+      - DB_PORT=3306
+      - PORT=4500
+    command: ["sh", "./init.sh"]
 
 volumes:
   mysql_data:

@@ -6,7 +6,13 @@ import prettier from 'eslint-plugin-prettier/recommended';
 
 export default [
 	{
-		ignores: ['build/', 'src/generated/**'],
+		ignores: [
+			'build/',
+			'src/generated/**',
+			'node_modules/',
+			'**/*.js',
+			'**/*.cjs',
+		],
 	},
 	js.configs.recommended,
 	...tseslint.configs.recommended,
@@ -19,9 +25,12 @@ export default [
 	},
 
 	{
-		files: ['src/**/*.{js,ts}'],
+		files: ['src/**/*.ts'],
 		rules: {
-			'@typescript-eslint/no-unused-vars': 'off',
+			'@typescript-eslint/no-unused-vars': [
+				'warn',
+				{ argsIgnorePattern: '^_' },
+			],
 			'prettier/prettier': [
 				'error',
 				{

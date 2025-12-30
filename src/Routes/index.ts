@@ -1,9 +1,9 @@
 import { Application } from 'express';
-import V1Router from './V1/index.js';
+import V1 from './V1.js';
 
 export default function (app: Application) {
 	app.get('/', (req, res) => {
 		res.send('Hello World!');
 	});
-	app.use('/v1', V1Router);
+	app.use('/v1', V1);
 }
