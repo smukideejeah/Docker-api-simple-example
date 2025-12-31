@@ -3,3 +3,4 @@ package-lock.json
 build
 sequelize-meta.json
 config/config.json
+.env
